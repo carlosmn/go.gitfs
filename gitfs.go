@@ -1,4 +1,4 @@
-// gitfs implements a http.FileSystem which is backed by a Git
+// Package gitfs implements a http.FileSystem which is backed by a Git
 // repository.
 //
 // More specifically, the object returned is tied to a particular
@@ -44,7 +44,7 @@ func (v *gitFile) Read(out []byte) (int, error) {
 }
 
 func (v *gitFile) Readdir(count int) ([]os.FileInfo, error) {
-	return nil, errors.New("I'm not a directory")
+	return nil, errors.New("sorry, I'm not a directory")
 }
 
 func (v *gitFile) Seek(offset int64, whence int) (int64, error) {
@@ -193,12 +193,12 @@ func (v *gitFileSystem) Open(name string) (http.File, error) {
 			entry: entry,
 			tree:  obj.(*git.Tree),
 		}, nil
-	} else {
-		return &gitFile{
-			entry: entry,
-			blob:  obj.(*git.Blob),
-		}, nil
 	}
+
+	return &gitFile{
+		entry: entry,
+		blob:  obj.(*git.Blob),
+	}, nil
 }
 
 // NewFromTree creates a new http.FileSystem from a given repository
@@ -223,7 +223,7 @@ func NewFromReference(repo *git.Repository, ref *git.Reference) (http.FileSystem
 	return NewFromTree(repo, obj.(*git.Tree)), nil
 }
 
-// NewFromReference creates a new FileSystem from a reference
+// NewFromReferenceName creates a new FileSystem from a reference
 // (specified by name) in the given repository. The reference must
 // peel to a tree, which will then be exposed as the root of the
 // filesystem.

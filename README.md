@@ -12,6 +12,8 @@ simpler.
 
 # Usage
 
+[![GoDoc](https://godoc.org/github.com/carlosmn/go.gitfs?status.png)](https://godoc.org/github.com/carlosmn/go.gitfs)
+
 The constructors let you do more or less work depending on how much
 information you have. You can pass in a tree, a reference or simply
 the name.
