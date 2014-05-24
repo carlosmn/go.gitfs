@@ -3,13 +3,17 @@
 This lets you present a Git repository as a `http.FileSystem` to let
 the http package take care of the HTTP for you.
 
+# Dependencies
+
+This uses git2go which uses libgit2. This means you need a compatible
+version of libgit2 installed and accessible on your system. At some
+point libgit2 will have a static version, which will make this
+simpler.
+
 # Usage
 
-There is only one function for now. Call
+The constructors let you do more or less work depending on how much
+information you have. You can pass in a tree, a reference or simply
+the name.
 
-```go
-gitfs.NewFromReference()
-```
-
-and give it your repository and which reference you want it to
-expose. It will load the tree and present that as a filesystem.
+The tree will be used as the root of the filesystem.

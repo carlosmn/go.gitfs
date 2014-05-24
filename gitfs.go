@@ -183,7 +183,7 @@ func (v *gitFileSystem) Open(name string) (http.File, error) {
 	}
 
 	var obj git.Object
-	if obj, err = v.repo.Lookup(entry.Id); err != nil  {
+	if obj, err = v.repo.Lookup(entry.Id); err != nil {
 		return nil, err
 	}
 
@@ -201,24 +201,39 @@ func (v *gitFileSystem) Open(name string) (http.File, error) {
 	}
 }
 
-// Create a new FileSystem from a reference (specified by name) in the
-// given repository. The reference must peel to a tree, which will
-// then be exposed as the root of the filesystem.
-func NewFromReference(repo *git.Repository, branch string) (http.FileSystem, error) {
-	var ref *git.Reference
+// NewFromTree creates a new http.FileSystem from a given repository
+// and tree. The tree will be exposed as the root of the filesystem.
+func NewFromTree(repo *git.Repository, tree *git.Tree) http.FileSystem {
+	return &gitFileSystem{
+		repo: repo,
+		tree: tree,
+	}
+}
+
+// NewFromReference creates a new http.FileSystem from a given
+// repository and reference. The reference must peel to a tree, which
+// will then be exposed as the root of the filesystem
+func NewFromReference(repo *git.Repository, ref *git.Reference) (http.FileSystem, error) {
 	var obj git.Object
+	var err error
+	if obj, err = ref.Peel(git.ObjectTree); err != nil {
+		return nil, err
+	}
+
+	return NewFromTree(repo, obj.(*git.Tree)), nil
+}
+
+// NewFromReference creates a new FileSystem from a reference
+// (specified by name) in the given repository. The reference must
+// peel to a tree, which will then be exposed as the root of the
+// filesystem.
+func NewFromReferenceName(repo *git.Repository, branch string) (http.FileSystem, error) {
+	var ref *git.Reference
 	var err error
 
 	if ref, err = repo.LookupReference(branch); err != nil {
 		return nil, err
 	}
 
-	if obj, err = ref.Peel(git.ObjectTree); err != nil {
-		return nil, err
-	}
-
-	return &gitFileSystem{
-		repo: repo,
-		tree: obj.(*git.Tree),
-	}, nil
+	return NewFromReference(repo, ref)
 }
