@@ -38,6 +38,10 @@ func (v *gitFile) Read(out []byte) (int, error) {
 	data := v.blob.Contents()
 
 	n := copy(out, data[v.offset:])
+	if n == 0 {
+		return 0, io.EOF
+	}
+
 	v.offset += int64(n)
 
 	return n, nil
