@@ -109,7 +109,6 @@ func (v *gitFileInfo) Sys() interface{} {
 }
 
 type gitTree struct {
-	repo  *git.Repository
 	entry *git.TreeEntry
 	tree  *git.Tree
 	idx   uint64
@@ -131,7 +130,7 @@ func (v *gitTree) Readdir(count int) ([]os.FileInfo, error) {
 	list := make([]os.FileInfo, 0, max)
 	for ; v.idx < max; v.idx++ {
 		entry := v.tree.EntryByIndex(v.idx)
-		obj, err := v.repo.Lookup(entry.Id)
+		obj, err := v.tree.Owner().Lookup(entry.Id)
 		if err != nil {
 			return nil, err
 		}
@@ -157,7 +156,6 @@ func (v *gitTree) Stat() (os.FileInfo, error) {
 }
 
 type gitFileSystem struct {
-	repo *git.Repository
 	tree *git.Tree
 }
 
@@ -183,13 +181,12 @@ func (v *gitFileSystem) Open(name string) (http.File, error) {
 	}
 
 	var obj git.Object
-	if obj, err = v.repo.Lookup(entry.Id); err != nil {
+	if obj, err = v.tree.Owner().Lookup(entry.Id); err != nil {
 		return nil, err
 	}
 
 	if entry.Type == git.ObjectTree {
 		return &gitTree{
-			repo:  v.repo,
 			entry: entry,
 			tree:  obj.(*git.Tree),
 		}, nil
@@ -201,26 +198,25 @@ func (v *gitFileSystem) Open(name string) (http.File, error) {
 	}, nil
 }
 
-// NewFromTree creates a new http.FileSystem from a given repository
-// and tree. The tree will be exposed as the root of the filesystem.
-func NewFromTree(repo *git.Repository, tree *git.Tree) http.FileSystem {
+// NewFromTree creates a new http.FileSystem from a given tree. The
+// tree will be exposed as the root of the filesystem.
+func NewFromTree(tree *git.Tree) http.FileSystem {
 	return &gitFileSystem{
-		repo: repo,
 		tree: tree,
 	}
 }
 
 // NewFromReference creates a new http.FileSystem from a given
-// repository and reference. The reference must peel to a tree, which
-// will then be exposed as the root of the filesystem
-func NewFromReference(repo *git.Repository, ref *git.Reference) (http.FileSystem, error) {
+// reference. The reference must peel to a tree, which will then be
+// exposed as the root of the filesystem
+func NewFromReference(ref *git.Reference) (http.FileSystem, error) {
 	var obj git.Object
 	var err error
 	if obj, err = ref.Peel(git.ObjectTree); err != nil {
 		return nil, err
 	}
 
-	return NewFromTree(repo, obj.(*git.Tree)), nil
+	return NewFromTree(obj.(*git.Tree)), nil
 }
 
 // NewFromReferenceName creates a new FileSystem from a reference
@@ -235,5 +231,5 @@ func NewFromReferenceName(repo *git.Repository, branch string) (http.FileSystem,
 		return nil, err
 	}
 
-	return NewFromReference(repo, ref)
+	return NewFromReference(ref)
 }
