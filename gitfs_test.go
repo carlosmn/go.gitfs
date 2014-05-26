@@ -97,4 +97,14 @@ func TestGetFile(t *testing.T) {
 	if w.Body.String() != "foo\n" {
 		t.Fatal("bad content served")
 	}
+
+	w = httptest.NewRecorder()
+	req, err = http.NewRequest("GET", "http://localhost/NOTHERE", nil)
+	checkFatal(t, err)
+
+	fs.ServeHTTP(w, req)
+
+	if w.Code != 404 {
+		t.Fatalf("Should not have found that file %v", w.Code)
+	}
 }
