@@ -3,8 +3,8 @@ package gitfs
 import (
 	"github.com/libgit2/git2go"
 	"io/ioutil"
-	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"runtime"
 	"testing"
@@ -83,21 +83,18 @@ func TestGetFile(t *testing.T) {
 	tree, err := repo.LookupTree(treeID)
 	checkFatal(t, err)
 
-	// TODO: we should probably wait on a random port
-	listener, err := net.Listen("tcp", "localhost:8080")
-	checkFatal(t, err)
-	defer listener.Close()
-
-	go http.Serve(listener, http.FileServer(NewFromTree(tree)))
-
-	resp, err := http.Get("http://localhost:8080/README")
-	checkFatal(t, err)
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
+	fs := http.FileServer(NewFromTree(tree))
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "http://localhost/README", nil)
 	checkFatal(t, err)
 
-	if string(body) != "foo\n" {
+	fs.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Fatalf("Request did not succeed %v\n", w.Code)
+	}
+
+	if w.Body.String() != "foo\n" {
 		t.Fatal("bad content served")
 	}
 }
